@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+ use Illuminate\Contracts\Auth\MustVerifyEmail;
 // use Database\Factories\UserFactory;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,11 +13,9 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
-
     /**
      * Get the attributes that should be cast.
      *
@@ -26,9 +24,15 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
+        'birthdate',
+        'gender',
+        'bio',
+        'image',
         'role',
+        'password',
     ];
+
+    use HasFactory, Notifiable, HasApiTokens;
 
     public function isAdmin(): bool {
         return $this->role === 'admin';
@@ -42,7 +46,21 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'birthdate' => 'date',
         ];
+    }
+
+    public function getImageUrlAttribute()
+    {
+        if ($this->image) {
+            return asset('storage/' . $this->image);
+        }
+
+        return match ($this->gender) {
+            'male' => asset('images/man-avatar.png'),
+            'female' => asset('images/woman-avatar.png'),
+            'default' => asset('images/development.png'),
+        };
     }
     public function books() {
         return $this->hasMany(Book::class);

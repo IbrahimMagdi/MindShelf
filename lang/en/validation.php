@@ -182,7 +182,11 @@ return [
         'attribute-name' => [
             'rule-name' => 'custom-message',
         ],
+        'birthdate' => [
+            'before' => 'You must be at least 12 years old.',
+        ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------

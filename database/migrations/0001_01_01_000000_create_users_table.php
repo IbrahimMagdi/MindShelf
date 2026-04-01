@@ -18,6 +18,10 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['admin', 'author', 'customer'])->default('customer');
+            $table->string('bio')->default('Between the pages of a book, I found myself 📚✨');
+            $table->date('birthdate')->nullable();
+            $table->enum('gender', ['male', 'female']);
+            $table->string('image')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

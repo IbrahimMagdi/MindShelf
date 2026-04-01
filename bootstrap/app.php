@@ -3,6 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Helpers\ApiResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,6 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\SetLocale::class);
 
     })
+
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+
+        $exceptions->render(function (NotFoundHttpException $e) {
+            $previous = $e->getPrevious();
+            if ($previous instanceof ModelNotFoundException) {
+                $model = class_basename($previous->getModel());
+                return ApiResponse::error("{$model} not found", 404);
+            }
+            return ApiResponse::error("Resource not found", 404);
+        });
     })->create();
