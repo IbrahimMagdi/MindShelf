@@ -24,6 +24,14 @@ class ApiResponse
         ], $status);
     }
 
+    public static function validation($errors, $message = 'Validation error', $status = 422): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'errors' => $errors,
+        ], $status);
+    }
     public static function paginated($paginator, $message = 'Success')
     {
         return response()->json([

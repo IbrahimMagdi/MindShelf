@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'birthdate' => $this->birthdate?->toDateString(),
             'gender' => $this->gender,
             'role' => $this->role,
+            'token' => $this->when(isset($this->token), $this->token),
         ];
     }
 }

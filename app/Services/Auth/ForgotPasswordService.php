@@ -11,13 +11,13 @@ class ForgotPasswordService
 {
     public function sendResetLink(string $email): array
     {
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            return [
-                'success' => false,
-                'message' => 'هذا الإيميل غير موجود'
-            ];
-        }
+//        $user = User::where('email', $email)->first();
+//        if (!$user) {
+//            return [
+//                'success' => false,
+//                'message' => 'هذا الإيميل غير موجود'
+//            ];
+//        }
         $token = Str::random(64);
 
         DB::table('password_reset_tokens')->updateOrInsert(
@@ -30,7 +30,7 @@ class ForgotPasswordService
         // Mail::to($email)->send(new ResetPasswordMail($token));
         return [
             'success' => true,
-            'message' => 'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني',
+            'message' => __('auth.sucssessForgot'),
             'token' => $token
         ];
     }

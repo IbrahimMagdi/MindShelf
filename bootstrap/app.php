@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Helpers\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,5 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 return ApiResponse::error("{$model} not found", 404);
             }
             return ApiResponse::error("Resource not found", 404);
+        });
+        $exceptions->render(function (ValidationException $e) {
+            return ApiResponse::validation($e->errors());
         });
     })->create();
