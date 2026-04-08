@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Profile;
+namespace App\Http\Requests\Auth;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateProfileRequest extends FormRequest
+class VerifyDeviceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +23,9 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'string', 'min:3', 'max:100'],
-            'bio' => ['string', 'max:255'],
-            'gender' => ['sometimes', 'in:male,female'],
-            'birthdate' => ['sometimes', 'date', 'before:-12 years'],
-            'image' => ['sometimes', 'image', 'mimes:jpeg,jpg,png', 'max:1048'],
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'string', 'size:6'],
+            'logout_device_id' => ['required', 'integer', 'exists:personal_access_tokens,id'],
         ];
     }
 }

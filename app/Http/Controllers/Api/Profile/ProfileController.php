@@ -9,6 +9,7 @@ use App\Http\Resources\Profile\ProfileResource;
 use App\Services\Profile\UpdateImageService;
 use App\Services\Profile\UpdateProfileService;
 use App\Http\Requests\Profile\UpdateImageRequest;
+use App\Http\Requests\Auth\Register;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Helpers\ApiResponse;
 

@@ -21,8 +21,23 @@ class Category extends Model
         return $this->hasMany(Book::class);
     }
 
-    public function getRouteKeyName()
-{
-    return 'slug';
-}
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($category) {
+            $category->slug = \Str::slug($category->name);
+        });
+
+        static::updating(function ($category) {
+            if ($category->isDirty('name')) {
+                $category->slug = \Str::slug($category->name);
+            }
+        });
+    }
+
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->status === true;
+    }
 }

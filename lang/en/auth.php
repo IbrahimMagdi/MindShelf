@@ -15,6 +15,7 @@ return [
     'verify' => 'Account verified successfully.',
     'already_verified' => 'Account already verified.',
     'verification_link_sent' => 'A verification link has been sent to your email.',
+    'token_refreshed' => 'Session refreshed successfully.',
     'successRegister' => 'Account created successfully. Please check your email to verify your account.',
     'successLogin' => 'Login successful.',
     'successForgot' => 'A reset link has been sent to your email.',
