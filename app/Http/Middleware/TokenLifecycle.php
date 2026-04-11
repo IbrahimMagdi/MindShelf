@@ -22,14 +22,19 @@ class TokenLifecycle
             return $next($request);
         }
 
-        if ($token->expires_at && $token->expires_at->isPast()) {
+        // 💡 بنشيك على عمود الـ Access الجديد بتاعك
+        if ($token->access_expires_at && $token->access_expires_at->isPast()) {
             $token->delete();
             return ApiResponse::error('Token expired', 401);
         }
 
-        $token->forceFill([
-            'last_used_at' => now(),
-        ])->save();
+        // 💡 تأمين إضافي: نمنع حد يستخدم الـ Refresh Token في الروات العادية
+        if ($token->token_type === 'refresh' && !$request->is('api/auth/refresh')) {
+            return ApiResponse::error('Unauthorized: Access token required', 401);
+        }
 
-        return $next($request);    }
+        $token->forceFill(['last_used_at' => now()])->save();
+
+        return $next($request);
+    }
 }

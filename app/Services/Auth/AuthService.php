@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 use App\Services\Settings\OtpService;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DeviceLimitMail;
+use App\Mail\WelcomeMail;
+
 class AuthService
 {
     public function __construct(private OtpService $otpService) {}
@@ -19,11 +21,13 @@ class AuthService
     {
         $data['password'] = Hash::make($data['password']);
         $user = User::create($data);
+        Mail::to($user->email)->send(new WelcomeMail($user));
         $tokenResult = $this->createDeviceToken($user, $request);
         return [
             'status' => 'success',
             'user' => $user,
-            'token' => $tokenResult['token'],
+            'access_token' => $tokenResult['access_token'],
+            'refresh_token' => $tokenResult['refresh_token'],
             'message' => __('auth.successRegister'),
             'code' => 200
         ];
@@ -38,12 +42,21 @@ class AuthService
                 'code' => 401
             ];
         }
+
         $user = Auth::user();
+
         if ($user->tokens()->count() >= 3) {
 
             try {
+                $agent = $this->getAgent($request);
                 $code = $this->otpService->generate($user, 'device_limit');
-                Mail::to($user->email)->send(new DeviceLimitMail($code));
+                Mail::to($user->email)->send(new DeviceLimitMail(
+                    $code,
+                    $agent->browser(),
+                    $agent->platform(),
+                    $agent->device(),
+                    $request->ip()
+                ));
                 $devices = $user->tokens()
                     ->select(['id', 'name', 'device_id', 'browser', 'platform', 'last_used_at'])
                     ->get();
@@ -74,7 +87,8 @@ class AuthService
         return [
             'status' => 'success',
             'user' => $user,
-            'token' => $tokenResult['token'],
+            'access_token' => $tokenResult['access_token'],
+            'refresh_token' => $tokenResult['refresh_token'],
             'code' => 200
         ];
 
@@ -83,42 +97,51 @@ class AuthService
     {
         return implode(' - ', array_filter([$agent->device(), $agent->browser(), $agent->platform()])) ?: 'Unknown Device';
     }
-
-    private function createDeviceToken(User $user, Request $request): array
+    private function getAgent(Request $request): Agent
     {
         $agent = new Agent();
-        $agent->setUserAgent($request->header('User-Agent'));
+        $agent->setUserAgent($request->header('User-Agent', ''));
 
+        return $agent;
+    }
+    private function createDeviceToken(User $user, Request $request): array
+    {
+        $agent = $this->getAgent($request);
         $deviceName = $this->generateDeviceName($agent);
         $deviceId = $request->header('X-Device-Id') ?: (string) Str::uuid();
 
-        $existingToken = $user->tokens()->where('device_id', $deviceId)
-            ->first();
+        // 💡 الأفضل: امسح القديم بتاع الجهاز ده عشان م يعملش تعارض
+        $user->tokens()->where('device_id', $deviceId)->delete();
 
-        if ($existingToken) {
-            return [
-                'already_logged_in' => true,
-                'token' => null
-            ];
-        }
-        $tokenInstance = $user->createToken($deviceName);
-
-        $tokenInstance->accessToken->forceFill([
+        // 1️⃣ Access Token
+        $accessToken = $user->createToken($deviceName . '-access');
+        $accessToken->accessToken->forceFill([
             'device_id'  => $deviceId,
-            'name' => $deviceName,
+            'name'       => $deviceName,
             'ip_address' => $request->ip(),
             'browser'    => $agent->browser(),
             'platform'   => $agent->platform(),
             'device'     => $agent->device(),
-            'last_used_at' => now(),
+            'token_type' => 'access', // ✅ متوافق مع المايجريشن
+            'access_expires_at' => now()->addMinutes(10),
+        ])->save();
+
+        // 2️⃣ Refresh Token
+        $refreshToken = $user->createToken($deviceName . '-refresh');
+        $refreshToken->accessToken->forceFill([
+            'device_id'  => $deviceId,
+            'name'       => $deviceName, // مهم عشان الـ Refresh يبقى عارف اسم الجهاز
+            'ip_address' => $request->ip(),
+            'token_type' => 'refresh', // ✅ متوافق مع المايجريشن
+            'refresh_expires_at' => now()->addDays(7),
         ])->save();
 
         return [
             'already_logged_in' => false,
-            'token' => $tokenInstance->plainTextToken
+            'access_token' => $accessToken->plainTextToken,
+            'refresh_token' => $refreshToken->plainTextToken
         ];
     }
-
     public function verifyDevice(array $data, Request $request): array
     {
         $user = User::where('email', $data['email'])->first();
@@ -151,30 +174,77 @@ class AuthService
 
     public function refreshToken(Request $request): array
     {
+        $currentToken = $request->user()?->currentAccessToken();
+
+        if (!$currentToken) {
+            return [
+                'status' => 'failed',
+                'message' => 'Unauthenticated',
+                'code' => 401
+            ];
+        }
+
+        // 🔥 لازم يكون refresh token
+        if ($currentToken->token_type !== 'refresh') {
+            return [
+                'status' => 'failed',
+                'message' => 'Invalid token type',
+                'code' => 403
+            ];
+        }
+
+        // ⛔ expired check
+        if ($currentToken->refresh_expires_at && $currentToken->refresh_expires_at->isPast()) {
+            $currentToken->delete();
+
+            return [
+                'status' => 'failed',
+                'message' => 'Refresh token expired, please login again',
+                'code' => 401
+            ];
+        }
+
         $user = $request->user();
-        $currentToken = $user->currentAccessToken();
 
-        $attributes = [
-            'device_id'    => $currentToken->device_id,
-            'ip_address'   => $request->ip(), // تحديث الـ IP للجديد
-            'user_agent'   => $request->header('User-Agent'),
-            'browser'      => $currentToken->browser,
-            'platform'     => $currentToken->platform,
-            'device'       => $currentToken->device,
-            'last_used_at' => now(),
-        ];
-
+        // 🧠 نحفظ بيانات الجهاز قبل الحذف
+        $deviceId = $currentToken->device_id;
         $deviceName = $currentToken->name;
 
+        // ❌ revoke old refresh token (rotation step)
         $currentToken->delete();
 
-        $newToken = $user->createToken($deviceName);
-        $newToken->accessToken->forceFill($attributes)->save();
+        // =========================
+        // 🔥 CREATE NEW ACCESS TOKEN
+        // =========================
+        $newAccess = $user->createToken($deviceName . '-access');
+
+        $newAccess->accessToken->forceFill([
+            'device_id' => $deviceId,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'last_used_at' => now(),
+            'access_expires_at' => now()->addMinutes(10),
+            'token_type' => 'access',
+        ])->save();
+
+        // =========================
+        // 🔥 CREATE NEW REFRESH TOKEN
+        // =========================
+        $newRefresh = $user->createToken($deviceName . '-refresh');
+
+        $newRefresh->accessToken->forceFill([
+            'device_id' => $deviceId,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent'),
+            'refresh_expires_at' => now()->addDays(7),
+            'token_type' => 'refresh',
+        ])->save();
 
         return [
             'status' => 'success',
-            'token'  => $newToken->plainTextToken,
-            'code'   => 200
+            'access_token' => $newAccess->plainTextToken,
+            'refresh_token' => $newRefresh->plainTextToken,
+            'code' => 200
         ];
     }
 }

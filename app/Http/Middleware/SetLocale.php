@@ -15,7 +15,7 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
 {
-    $locale = $request->header('Accept-Language', config('app.locale'));
+    $locale = substr($request->header('Accept-Language'), 0, 2);
 
     if (in_array($locale, ['ar', 'en'])) {
         app()->setLocale($locale);

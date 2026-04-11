@@ -2,36 +2,41 @@
 
 namespace App\Services\Auth;
 
+use App\Mail\ResetPasswordMail;
 use App\Models\User;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+
+use App\Services\Settings\OtpService;
 
 class ForgotPasswordService
 {
+    public function __construct(protected OtpService $otpService){}
     public function sendResetLink(string $email): array
     {
-//        $user = User::where('email', $email)->first();
-//        if (!$user) {
-//            return [
-//                'success' => false,
-//                'message' => 'هذا الإيميل غير موجود'
-//            ];
-//        }
-        $token = Str::random(64);
+        $user = User::where('email', $email)->first();
 
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $email],
-            [
-                'token' => Hash::make($token),
-                'created_at' => now()
-            ]
-        );
-        // Mail::to($email)->send(new ResetPasswordMail($token));
-        return [
-            'success' => true,
-            'message' => __('auth.sucssessForgot'),
-            'token' => $token
-        ];
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => __('auth.userNotFound'),
+            ];
+        }
+        try {
+            $code = $this->otpService->generate($user, 'password_reset');
+
+            Mail::to($user->email)->send(new ResetPasswordMail($user, $code));
+
+            return [
+                'success' => 'success',
+                'message' => __('auth.successForgot'),
+            ];
+
+        } catch (\RuntimeException $e) {
+            return [
+                'success' => 'failed',
+                'message' => $e->getMessage(),
+                'code' => 429
+            ];
+        }
     }
 }

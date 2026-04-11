@@ -9,11 +9,22 @@ class PersonalAccessToken extends SanctumToken
         'name',
         'token',
         'abilities',
-        'expires_at',
+        'device_id',
         'ip_address',
         'user_agent',
         'browser',
         'platform',
         'device',
+        'last_used_at',
+        'access_expires_at',
+        'refresh_expires_at',
+        'token_type',
+    ];
+
+    protected $casts = [
+        'abilities' => 'json',
+        'last_used_at' => 'datetime',
+        'access_expires_at' => 'datetime',
+        'refresh_expires_at' => 'datetime',
     ];
 }

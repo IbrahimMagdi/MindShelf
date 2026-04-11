@@ -22,7 +22,8 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
     ->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
 
 
-Route::middleware(['auth:sanctum', 'verified'])->prefix('profile')->group(function ()
+Route::middleware(['auth:sanctum', 'device.check', 'token.lifecycle'])->group(function () {
+    Route::prefix('profile')->group(function ()
     {
         Route::get('/my', [ProfileController::class, 'my']); // api/profile/my
         Route::get('/other/{user}', [ProfileController::class, 'other'])->whereNumber('user')->scopeBindings();   // api/profile/
@@ -31,11 +32,16 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('profile')->group(functi
         Route::delete('/remove-image', [ProfileController::class, 'removeImage']);
         Route::post('/logout', [ProfileController::class, 'logout']); // api/profile/logout
     });
-Route::middleware(['auth:sanctum'])->prefix('settings')->group(function () {
 
-    Route::get('/devices/list', [DeviceController::class, 'index']);
+    Route::prefix('settings')->group(function () {
 
-    Route::delete('/devices/{id}', [DeviceController::class, 'destroy']);
+        Route::get('/devices/list', [DeviceController::class, 'index']);
 
-    Route::delete('/devices', [DeviceController::class, 'logoutOthers']);
+        Route::delete('/devices/{id}', [DeviceController::class, 'destroy']);
+
+        Route::delete('/devices', [DeviceController::class, 'logoutOthers']);
+    });
 });
+
+
+

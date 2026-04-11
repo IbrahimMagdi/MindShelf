@@ -41,10 +41,12 @@ class AuthController extends Controller
     {
         $result = $this->authService->register($request->validated(), $request);
         $result['user']->sendEmailVerificationNotification();
+
         return ApiResponse::success(
             [
                 'user' => new UserResource($result['user']),
-                'token' => $result['token']
+                'access_token' => $result['access_token'],
+                'refresh_token' => $result['refresh_token']
             ],
             __('auth.successRegister')
         );
@@ -62,7 +64,8 @@ class AuthController extends Controller
         return ApiResponse::success(
             [
                 'user' => new UserResource($result['user']),
-                'token' => $result['token']
+                'access_token' => $result['access_token'],
+                'refresh_token' => $result['refresh_token']
             ],
             __('auth.successLogin')
         );
@@ -71,19 +74,19 @@ class AuthController extends Controller
     public function forgotPassword(ForgotPasswordRequest $request ,ForgotPasswordService $service)
     {
         $result = $service->sendResetLink($request->email);
-        if(!$result['success']){
+        if($result['success'] !== 'success'){
             return ApiResponse::error($result['message']);
         }
-        return ApiResponse::success(['token' => $result['token']], $result['message']);
+        return ApiResponse::success(null, $result['message']);
     }
 
     public function resetPassword(ResetPasswordRequest $request ,ResetPasswordService $service)
     {
         $result = $service->reset($request->validated());
-        if (!$result['success']) {
-            return ApiResponse::error($result['message']);
+        if ($result['success'] !== 'success') {
+            return ApiResponse::error($result['message'], $result['code']);
         }
-        return ApiResponse::success(null, $result['message']);
+        return ApiResponse::success(null, $result['message'], $result['code']);
     }
 
     public function verifyDeviceAndLogin(VerifyDeviceRequest $request)
@@ -105,8 +108,15 @@ class AuthController extends Controller
     public function refreshToken(Request $request): JsonResponse
     {
         $result = $this->authService->refreshToken($request);
+        if (isset($result['status']) && $result['status'] === 'failed') {
+            return ApiResponse::error($result['message'], $result['code']);
+        }
+
         return ApiResponse::success(
-            ['token' => $result['token']],
+            [
+                'access_token' => $result['access_token'],
+                'refresh_token' => $result['refresh_token']
+            ],
             __('auth.token_refreshed')
         );
     }

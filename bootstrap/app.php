@@ -17,10 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\App\Http\Middleware\SetLocale::class);
-        $middleware->alias(['token.lifecycle' => \App\Http\Middleware\TokenLifecycle::class,]);
-        $middleware->alias(['device.check' => \App\Http\Middleware\CheckDeviceFingerprint::class,
+        $middleware->prepend(\App\Http\Middleware\SetLocale::class);
+        $middleware->alias([
+            'device.check' => \App\Http\Middleware\CheckDeviceFingerprint::class,
+            'token.lifecycle' => \App\Http\Middleware\TokenLifecycle::class,
         ]);
+
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {
