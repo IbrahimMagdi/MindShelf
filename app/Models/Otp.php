@@ -12,11 +12,14 @@ class Otp extends Model
         'code',
         'type',
         'expires_at',
-        'used'
+        'used',
+        'attempts',
+        'verified_at',
     ];
     protected $casts = [
-        'expires_at' => 'datetime',
         'used' => 'boolean',
+        'expires_at' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

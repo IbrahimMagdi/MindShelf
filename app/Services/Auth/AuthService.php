@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 use App\Services\Settings\OtpService;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DeviceLimitMail;
-use App\Mail\WelcomeMail;
+use App\Mail\WelcomeVerificationMail;
 
 class AuthService
 {
@@ -21,7 +21,7 @@ class AuthService
     {
         $data['password'] = Hash::make($data['password']);
         $user = User::create($data);
-        Mail::to($user->email)->send(new WelcomeMail($user));
+        Mail::to($user->email)->send(new WelcomeVerificationMail($user));
         $tokenResult = $this->createDeviceToken($user, $request);
         return [
             'status' => 'success',

@@ -14,8 +14,13 @@ class DeviceLimitMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public string $code, public $browser, public $platform, public $device, public $ip)
-    {}
+    public function __construct(
+        public string $code,
+        public string $browser,
+        public string $platform,
+        public string $device,
+        public string $ip
+    ) {}
 
     public function envelope(): Envelope
     {

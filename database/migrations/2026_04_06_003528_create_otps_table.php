@@ -24,10 +24,12 @@ return new class extends Migration
             ])->default('device_limit');
 
             $table->timestamp('expires_at');
+            $table->unsignedTinyInteger('attempts')->default(0);
+            $table->timestamp('verified_at')->nullable();
             $table->boolean('used')->default(false);
             $table->timestamps();
 
-            $table->index(['user_id', 'code', 'type']);
+            $table->index(['user_id', 'code', 'type', 'used']);
         });
     }
 

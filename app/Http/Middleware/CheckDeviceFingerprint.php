@@ -5,29 +5,30 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Shared\Http\Responses\ApiResponse;
 
 class CheckDeviceFingerprint
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->currentAccessToken()) {
+        $user = $request->user();
+        $currentToken = $user?->currentAccessToken();
+
+        // لو مفيش يوزر أو توكن، عدي الريكويست والـ auth:sanctum هيتصرف
+        if (!$user || !$currentToken) {
             return $next($request);
         }
 
-        $currentToken = $request->user()->currentAccessToken();
         $headerDeviceId = $request->header('X-Device-Id');
 
+        // المقارنة بين الهيدر اللي جاي وبين اللي متخزن في التوكن وقت الـ Login/Register
         if (!$headerDeviceId || $headerDeviceId !== $currentToken->device_id) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'Security Breach: Device mismatch. Please login again.',
-            ], 403);
+            return ApiResponse::forbidden('Security Breach: Device identity mismatch. Access denied.');
         }
+
         return $next($request);
     }
 }

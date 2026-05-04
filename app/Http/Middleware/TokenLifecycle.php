@@ -5,14 +5,12 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Helpers\ApiResponse;
+use App\Shared\Http\Responses\ApiResponse; // الـ Namespace الموحد بتاعك
 
 class TokenLifecycle
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -22,17 +20,18 @@ class TokenLifecycle
             return $next($request);
         }
 
-        // 💡 بنشيك على عمود الـ Access الجديد بتاعك
+        // 1. فحص انتهاء صلاحية الـ Access Token (الـ 10 دقائق)
         if ($token->access_expires_at && $token->access_expires_at->isPast()) {
-            $token->delete();
-            return ApiResponse::error('Token expired', 401);
+            $token->delete(); // نمسحه من الداتابيز عشان ميبقاش فيه زحمة توكنز ميتة
+            return ApiResponse::error('Your session has expired. Please refresh token or login again.', 401);
         }
 
-        // 💡 تأمين إضافي: نمنع حد يستخدم الـ Refresh Token في الروات العادية
-        if ($token->token_type === 'refresh' && !$request->is('api/auth/refresh')) {
-            return ApiResponse::error('Unauthorized: Access token required', 401);
+        // 2. تأمين الروات: نمنع استخدام الـ Refresh Token في أي روت غير روت التجديد
+        if ($token->token_type === 'refresh' && !$request->is('api/auth/refresh*')) {
+            return ApiResponse::unauthorized('Unauthorized: This token is for refresh only. Access token required.');
         }
 
+        // تحديث آخر وقت استخدام (اختياري للمراقبة)
         $token->forceFill(['last_used_at' => now()])->save();
 
         return $next($request);

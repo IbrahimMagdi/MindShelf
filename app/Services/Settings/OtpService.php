@@ -2,13 +2,14 @@
 namespace App\Services\Settings;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class OtpService
 {
     public function generate(User $user, string $type): string
     {
         $this->checkRateLimit($user, $type);
-        $user->otps()->where('type', $type)->update(['used' => true]);
+        $user->otps()->where('type', $type)->update(['used' => DB::raw('true')]);
         $code = $this->generateSecureCode();
         $user->otps()->create([
             'user_id' => $user->id,
@@ -29,7 +30,7 @@ class OtpService
         if (!Hash::check($providedCode, $otp->code)) {
             return false;
         }
-        $otp->update(['used' => true]);
+        $otp->update(['used' => DB::raw('true')]);
         return true;
     }
     private function checkRateLimit(User $user, string $type): void

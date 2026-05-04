@@ -1,8 +1,8 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Mail;
 
-use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -13,14 +13,10 @@ class ResetPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $userName;
-    public $code;
-
-    public function __construct(User $user, string $code)
-    {
-        $this->userName = $user->name;
-        $this->code = $code;
-    }
+    public function __construct(
+        public readonly string $userName,
+        public readonly string $code,
+    ) {}
 
     public function envelope(): Envelope
     {
