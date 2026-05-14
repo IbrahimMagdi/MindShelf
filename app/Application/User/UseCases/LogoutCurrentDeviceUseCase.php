@@ -8,7 +8,7 @@ use App\Application\User\Ports\IdentityProviderInterface;
 use App\Application\User\Ports\TokenServiceInterface;
 use DomainException;
 
-final readonly class LogoutOtherDevicesUseCase
+final readonly class LogoutCurrentDeviceUseCase
 {
     public function __construct(
         private IdentityProviderInterface $identityProvider,
@@ -22,15 +22,9 @@ final readonly class LogoutOtherDevicesUseCase
         if(!$user){
             throw new DomainException('Unauthorized');
         }
+        $deviceInfo = $this->deviceDetector->getCurrentDeviceInfo();
+        $this->tokenService->revokeDeviceToken($user->getId(), $deviceInfo['device_id']);
 
-        $userId = $user->getId();
-        $activeCount = $this->tokenService->getActiveDevicesCount($userId);
-        if ($activeCount <= 1) {
-            throw new DomainException('You are only logged in on this device. No other sessions to revoke.');
-        }
 
-        $deviceId = $this->deviceDetector->getCurrentDeviceInfo();
-        $currentDeviceId = $deviceId['device_id'];
-        $this->tokenService->revokeAllExceptDevice($userId, $currentDeviceId);
     }
 }

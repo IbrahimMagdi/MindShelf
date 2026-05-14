@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Requests\Api\Profile;
 
@@ -23,7 +24,8 @@ class UpdateImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'image' => ['required', 'image', 'mimes:jpeg,jpg,png', 'max:1048']
+            'image' => ['required', 'image', 'mimes:jpeg,jpg,png', 'max:1048'],
+            'remove_image' => ['nullable', 'boolean'],
         ];
     }
 }

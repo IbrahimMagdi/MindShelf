@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Auth;
-use App\Http\Controllers\Api\Settings\Device;
 use App\Http\Controllers\Api\Profile;
+use App\Http\Controllers\Api\Setting;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,13 +29,12 @@ Route::prefix('auth')->group(function () {
 | Profile Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
-    Route::get('/me', Profile\MeController::class);
-    Route::put('/', Profile\UpdateController::class);
-    Route::post('/change-password', Profile\ChangePasswordController::class);
+Route::middleware(['auth:sanctum', 'device.check', 'token.lifecycle','verified'])->prefix('profile')->group(function () {
+    Route::get('/{userId}', Profile\GetUserController::class);
+//    Route::put('/', Profile\UpdateController::class);
     Route::post('/image', [Profile\ImageController::class, 'store']);
     Route::delete('/image', [Profile\ImageController::class, 'destroy']);
-    Route::post('/logout', Profile\LogoutController::class);
+
 });
 
 /*
@@ -43,10 +42,14 @@ Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
 | Device Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('settings/devices')->group(function () {
-    Route::get('/', Device\ListController::class);
-    Route::delete('/{deviceId}', Device\LogoutController::class);
-    Route::post('/logout-others', Device\LogoutOthersController::class);
+Route::middleware(['auth:sanctum', 'device.check', 'token.lifecycle','verified'])->prefix('setting')->group(function () {
+    Route::post('/change-password', Setting\ChangePasswordController::class);
+    Route::post('/logout', Setting\LogoutController::class);
+    Route::prefix('devices')->group(function () {
+        Route::get('/', Setting\Device\ListController::class);
+        Route::delete('/revoke', Setting\Device\LogoutController::class);
+        Route::delete('/logout-others', Setting\Device\LogoutOthersController::class);
+    });
 });
 
 
@@ -54,21 +57,8 @@ Route::middleware('auth:sanctum')->prefix('settings/devices')->group(function ()
 
 
 
-//Route::prefix('auth')->group(function () {
-//    Route::post('/register', [AuthController::class, 'register']);
-//    Route::post('/login', [AuthController::class, 'login']);
-//    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-//    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-//    Route::post('/verify-device', [AuthController::class, 'verifyDeviceAndLogin'])->middleware('throttle:5,1');
-//    Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware(['auth:sanctum',  'device.check', 'throttle:5,1']);
-//});
-//
-//Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
-//    ->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
-//
-//Route::post('/email/verification-notification', [AuthController::class, 'resendVerification'])
-//    ->middleware(['auth:sanctum', 'throttle:6,1'])->name('verification.send');
-//
+
+
 //
 //Route::middleware(['auth:sanctum', 'device.check', 'token.lifecycle'])->group(function () {
 //    Route::prefix('profile')->group(function ()
@@ -81,14 +71,7 @@ Route::middleware('auth:sanctum')->prefix('settings/devices')->group(function ()
 //        Route::post('/logout', [ProfileController::class, 'logout']); // api/profile/logout
 //    });
 //
-//    Route::prefix('settings')->group(function () {
-//
-//        Route::get('/devices/list', [DeviceController::class, 'index']);
-//
-//        Route::delete('/devices/{id}', [DeviceController::class, 'destroy']);
-//
-//        Route::delete('/devices', [DeviceController::class, 'logoutOthers']);
-//    });
+
 //});
 //
 //

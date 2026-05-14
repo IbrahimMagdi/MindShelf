@@ -41,7 +41,7 @@ class TokenServiceImpl implements TokenServiceInterface
 
     public function getActiveDevicesCount(int $userId): int
     {
-        return $this->tokenOps->countActiveTokens($userId);
+        return $this->tokenOps->countActiveDevices($userId);
     }
 
     public function getUserDevices(int $userId): array
@@ -86,5 +86,16 @@ class TokenServiceImpl implements TokenServiceInterface
             'refresh_token' => $refresh['token'],
             'device_id' => $deviceId,
         ];
+    }
+    public function revokeAllExceptDevice(int $userId, string $exceptDeviceId): void
+    {
+        $devices = $this->tokenOps->getDevicesMetadata($userId);
+        foreach($devices as $device){
+            $deviceId = $device['device_id'];
+            if($deviceId === $exceptDeviceId){
+                continue;
+            }
+            $this->tokenOps->revokeByDeviceId($userId, $deviceId);
+        }
     }
 }

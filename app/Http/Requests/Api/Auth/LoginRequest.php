@@ -11,7 +11,7 @@ final class LoginRequest extends ApiFormRequest
     {
         return [
             'email' => $this->emailRule(),
-            'password' => $this->passwordRule(min: 1), // Login: any length
+            'password' => $this->passwordRule(min: 1),
         ];
     }
 }

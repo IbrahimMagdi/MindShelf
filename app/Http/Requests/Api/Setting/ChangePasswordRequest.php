@@ -1,16 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Http\Requests\Api\Profile;
+namespace App\Http\Requests\Api\Setting;
 
 use App\Http\Requests\Api\ApiFormRequest;
 
-final class UpdateImageRequest extends ApiFormRequest
+final class ChangePasswordRequest extends ApiFormRequest
 {
     public function rules(): array
     {
         return [
-            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'current_password' => $this->passwordRule(min: 1),
+            'new_password' => $this->passwordRule(confirmed: true),
         ];
     }
 

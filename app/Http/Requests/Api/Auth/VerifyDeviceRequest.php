@@ -11,7 +11,6 @@ final class VerifyDeviceRequest extends ApiFormRequest
     {
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
-            'otp' => $this->otpRule(6),
             'logout_device_id' => ['nullable', 'string'],
         ];
     }

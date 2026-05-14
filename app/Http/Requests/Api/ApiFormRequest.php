@@ -46,7 +46,7 @@ abstract class ApiFormRequest extends FormRequest
 
     protected function passwordRule(int $min = 8, bool $confirmed = false): array
     {
-        $rules = ['required', 'string', "min:{$min}"];
+        $rules = ['required', 'string', "min:{$min}", 'max:16'];
 
         if ($confirmed) {
             $rules[] = 'confirmed';

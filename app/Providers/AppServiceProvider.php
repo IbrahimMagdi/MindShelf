@@ -9,6 +9,7 @@ use App\Application\User\Ports\PasswordHasherInterface;
 use App\Application\User\Ports\TokenOperationsInterface;
 use App\Application\User\Ports\TokenServiceInterface;
 use App\Application\User\Ports\DeviceDetectorInterface;
+use App\Application\User\Ports\IdentityProviderInterface;
 
 // Repositories
 use App\Domain\Otp\Repositories\OtpRepositoryInterface;
@@ -23,6 +24,8 @@ use App\Infrastructure\Services\User\TokenServiceImpl;
 use App\Infrastructure\Services\User\Device\DeviceDetector;
 use App\Infrastructure\Services\User\Device\DeviceNameResolver;
 use App\Infrastructure\Services\Notification\EmailNotificationService;
+use App\Infrastructure\Services\User\IdentityProvider;
+
 
 use App\Models\PersonalAccessToken;
 use Illuminate\Support\ServiceProvider;
@@ -35,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(UserRepositoryInterface::class, UserRepositoryImpl::class);
         $this->app->bind(OtpRepositoryInterface::class, OtpRepositoryImpl::class);
-
+        $this->app->bind(IdentityProviderInterface::class, IdentityProvider::class);
 
         $this->app->bind(PasswordHasherInterface::class, BcryptPasswordHasher::class);
         $this->app->bind(TokenOperationsInterface::class, TokenOperationsImpl::class);

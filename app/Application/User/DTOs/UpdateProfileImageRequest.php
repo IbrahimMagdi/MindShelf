@@ -6,10 +6,16 @@ use Illuminate\Http\UploadedFile;
 
 final readonly class UpdateProfileImageRequest
 {
-    public function __construct(public int $userId, public ?UploadedFile $imageFile) {}
+    public function __construct(
+        public ?UploadedFile $image = null,
+        public bool $removeImage = false
+    ) {}
 
     public static function fromArray(array $data): self
     {
-        return new self(userId: $data['user_id'], imageFile: $data['image'] ?? null);
+        return new self(
+            image: $data['image'] ?? null,
+            removeImage: $data['remove_image'] ?? false,
+        );
     }
 }

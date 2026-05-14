@@ -7,6 +7,7 @@ use App\Domain\User\Exceptions\TokenNotFoundException;
 use App\Application\User\Ports\TokenOperationsInterface;
 use App\Models\PersonalAccessToken;
 use App\Models\User as UserModel;
+use Carbon\Carbon;
 
 class TokenOperationsImpl implements TokenOperationsInterface
 {
@@ -57,12 +58,28 @@ class TokenOperationsImpl implements TokenOperationsInterface
         return ['token' => $token->plainTextToken];
     }
 
-    public function countActiveTokens(int $userId): int
+
+    public function countActiveDevices(int $userId): int
     {
         return PersonalAccessToken::where('tokenable_id', $userId)
-            ->where('token_type', 'access')
+            ->where('token_type', 'refresh')
+            ->where(function ($query) {
+                $query->whereNull('refresh_expires_at')
+                    ->orWhere('refresh_expires_at', '>', Carbon::now());
+            })
             ->count();
     }
+
+//    public function countActiveTokens(int $userId): int
+//    {
+//        return PersonalAccessToken::where('tokenable_id', $userId)
+//            ->where('token_type', 'access')
+//            ->where(function ($query) {
+//                $query->whereNull('access_expires_at')
+//                    ->orWhere('access_expires_at', '>', Carbon::now());
+//            })
+//            ->count();
+//    }
 
 
     public function revokeByDeviceId(int $userId, string $deviceId): void
@@ -92,14 +109,20 @@ class TokenOperationsImpl implements TokenOperationsInterface
     {
         return PersonalAccessToken::where('tokenable_id', $userId)
             ->where('token_type', 'refresh')
-            ->get(['id', 'name', 'device_id', 'platform', 'browser', 'last_used_at'])
+            ->where(function ($query) {
+                $query->whereNull('refresh_expires_at')
+                    ->orWhere('refresh_expires_at', '>', Carbon::now());
+            })
+            ->get(['id', 'name', 'device_id', 'platform', 'browser', 'last_used_at', 'created_at', 'updated_at'])
             ->map(fn($token) => [
                 'id' => $token->id,
                 'device_id' => $token->device_id,
                 'name' => $token->name,
                 'platform' => $token->platform,
                 'browser' => $token->browser,
-                'last_active' => $token->last_used_at?->diffForHumans() ?? 'Just now'
+                'last_used_at' => $token->last_used_at,
+                'created_at' => $token->created_at,
+                'updated_at' => $token->updated_at,
             ])->toArray();
     }
 

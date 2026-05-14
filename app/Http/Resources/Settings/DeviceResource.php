@@ -1,32 +1,28 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Resources\Settings;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Carbon\Carbon;
 
-class DeviceResource extends JsonResource
+final class DeviceResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
-
     {
-        $currentTokenId  = $request->user()->currentAccessToken()?->id;
+        $currentDeviceId = $request->header('X-Device-ID');
+        $lastActiveAt = $this['last_used_at'] ?? $this['created_at'];
         return [
-            'id' => $this->id,
-            'device_id' => $this->device_id,
-            'device_name' => $this->name,
-            'device' => $this->device,
-            'browser' => $this->browser,
-            'platform' => $this->platform,
-            'created_at' => date('Y-m-d H:i:s', $this->created_at),
-            'updated_at' => date('Y-m-d H:i:s', $this->updated_at),
-            'is_current' => $this->id === $currentTokenId,
-            'label' => $this->id === $currentTokenId ? 'This Device' : 'This Not Current Device',
+            'id' => $this['id'],
+            'device_id' => $this['device_id'],
+            'device_name' => $this['name'],
+            'platform' => $this['platform'],
+            'browser' => $this['browser'],
+            'created_at' => $this['created_at']?->format('Y-m-d H:i:s'),
+            'last_active' => $lastActiveAt ? Carbon::parse($lastActiveAt)->diffForHumans() : 'Just now',
+            'is_current' => $this['device_id'] === $currentDeviceId,
+            'label' => $this['device_id'] === $currentDeviceId ? 'This Device' : 'Other Device',
         ];
     }
 }

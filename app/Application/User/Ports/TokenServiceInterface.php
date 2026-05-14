@@ -12,4 +12,5 @@ interface TokenServiceInterface
     public function revokeDeviceToken(int $userId, string $deviceId): void;
     public function isDeviceSessionActive(int $userId, string $deviceId): bool;
     public function refreshAccessToken(string $refreshToken, string $deviceId): array;
+    public function revokeAllExceptDevice(int $userId, string $exceptDeviceId): void;
 }
