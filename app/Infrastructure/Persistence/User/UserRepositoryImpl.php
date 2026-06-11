@@ -12,7 +12,7 @@ use App\Models\User as UserModel;
 
 final class UserRepositoryImpl implements UserRepositoryInterface
 {
-    public function __construct(private readonly UserMapper $mapper) {}
+    public function __construct(private  UserMapper $mapper) {}
 
     public function findById(int $id): ?UserEntity
     {

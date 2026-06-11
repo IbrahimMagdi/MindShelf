@@ -54,3 +54,9 @@ final class LoginController extends ApiController
         };
     }
 }
+
+Abstract class Constans
+{
+    public static $refres_token = '';
+
+}

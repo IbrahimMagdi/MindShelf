@@ -14,7 +14,7 @@ use App\Application\User\Ports\IdentityProviderInterface;
 // Repositories
 use App\Domain\Otp\Repositories\OtpRepositoryInterface;
 use App\Domain\User\Repositories\UserRepositoryInterface;
-
+use App\Domain\Category\Repositories\CategoryRepositoryInterface;
 // Implementations
 use App\Infrastructure\Persistence\Otp\OtpRepositoryImpl;
 use App\Infrastructure\Persistence\User\UserRepositoryImpl;
@@ -25,6 +25,7 @@ use App\Infrastructure\Services\User\Device\DeviceDetector;
 use App\Infrastructure\Services\User\Device\DeviceNameResolver;
 use App\Infrastructure\Services\Notification\EmailNotificationService;
 use App\Infrastructure\Services\User\IdentityProvider;
+use App\Infrastructure\Persistence\Category\CategoryRepositoryImpl;
 
 
 use App\Models\PersonalAccessToken;
@@ -46,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(DeviceDetectorInterface::class, DeviceDetector::class);
         $this->app->bind(NotificationServiceInterface::class, EmailNotificationService::class);
+        $this->app->bind(CategoryRepositoryInterface::class, CategoryRepositoryImpl::class);
 
         $this->app->singleton(DeviceNameResolver::class);
     }
